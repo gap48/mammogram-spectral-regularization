@@ -4,8 +4,6 @@
 
 This framework addresses challenges in mammography classification through a three-phase approach.
 
----
-
 ### Phase 1: Breast-Aware Masked Image Modeling (MIM) Pretraining
 
 The framework performs self-supervised pretraining using a breast-aware Masked Image Modeling (MIM) approach. A binary breast mask, derived from a segmentation model, is applied to ensure the model focuses on the breast region during pretraining.
