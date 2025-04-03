@@ -2,56 +2,141 @@
 
 ## Technical Architecture
 
-This framework addresses challenges in mammography classification through a three-phase approach:
+This framework addresses challenges in mammography classification through a three-phase approach.
+
+---
 
 ### Phase 1: Breast-Aware Masked Image Modeling (MIM) Pretraining
 
-The framework performs self-supervised pretraining using a breast-aware Masked Image Modeling (MIM) approach. A binary breast mask, derived from a segmentation model, is applied to ensure the model focuses on the breast region during pretraining:
+The framework performs self-supervised pretraining using a breast-aware Masked Image Modeling (MIM) approach. A binary breast mask, derived from a segmentation model, is applied to ensure the model focuses on the breast region during pretraining.
 
-*   **Breast Segmentation and Mask Generation:** We define a binary mask $M(x) \in \{0, 1\}^{H \times W}$ for each mammogram $x$ using a sequence of image processing operations (CLAHE, Otsu's thresholding, morphological operations).
+#### Breast Segmentation and Mask Generation
 
-*   **Breast-Aware Masking Strategy:** We partition the image into non-overlapping blocks, identify blocks overlapping the breast region, and randomly mask a subset. Mathematically, eligible breast blocks are defined as:
-    $$ B = \{ p_i | \text{avg\_pool2d}(M(x), b)(r_i, c_i) > \tau \} $$
-    where $\tau$ is a threshold parameter (default $\tau = 0.5$).
+We define a binary mask \(M(x) \in \{0,1\}^{H \times W}\) for each mammogram \(x\) using a sequence of image processing operations (CLAHE, Otsu’s thresholding, and morphological operations).
 
-*   **Reconstruction Objective:** The loss function is:
-    $$ \mathcal{L}_{MIM} = \frac{1}{B} \sum_{b=1}^{B} \frac{\| f(\tilde{x}_b) - x_b \|_1 \cdot M(x_b)}{\sum M(x_b) + \epsilon} $$
-    where $\tilde{x}$ is the masked image and $\epsilon = 10^{-8}$ prevents division by zero.
+#### Breast-Aware Masking Strategy
 
-*   **Spectral Norm Regularization:** We apply spectral regularization to the query and key projection matrices in self-attention layers:
-    $$ \mathcal{L}_{SN,base} = \beta \sum_{l=1}^{L} [\sigma_{max}(W^Q_{(l)})^2 + \sigma_{max}(W^K_{(l)})^2] $$
-    where $\sigma_{max}(W)$ denotes the largest singular value of matrix $W$.
+We partition the image into non-overlapping blocks, identify blocks overlapping the breast region, and randomly mask a subset. Mathematically, eligible breast blocks are defined as:
+
+$$
+B = \bigl\{ p_i \mid \text{avg\_pool2d}(M(x), b, b)(r_i, c_i) > \tau \bigr\},
+$$
+
+where \(\tau\) is a threshold parameter (default \(\tau = 0.5\)).
+
+#### Reconstruction Objective
+
+The loss function is:
+
+$$
+\mathcal{L}_{\mathrm{MIM}}
+= \frac{1}{B} \sum_{b=1}^{B}
+  \frac{\bigl\| f_{\theta}\bigl(\tilde{x}_b\bigr) - x_b \bigr\|_{1} \,\cdot\, M(x_b)}
+       {\sum M(x_b) + \epsilon},
+$$
+
+where \(\tilde{x}\) is the masked image, and \(\epsilon = 10^{-8}\) prevents division by zero.
+
+#### Spectral Norm Regularization
+
+We apply spectral regularization to the query and key projection matrices in self-attention layers:
+
+$$
+\mathcal{L}_{\mathrm{SN,base}}
+= \beta \sum_{l=1}^{L}
+  \Bigl[
+    \sigma_{\max}\bigl(W^{Q}_{(l)}\bigr)^2
+    + \sigma_{\max}\bigl(W^{K}_{(l)}\bigr)^2
+  \Bigr],
+$$
+
+where \(\sigma_{\max}(W)\) denotes the largest singular value of matrix \(W\).
+
+---
 
 ### Phase 2: Spectral-Regularized Fine-Tuning for Classification
 
-We fine-tune the pretrained Swin Transformer encoder for binary classification (benign vs. malignant):
+We fine-tune the pretrained Swin Transformer encoder for binary classification (benign vs. malignant).
 
-*   **Classification Architecture:** The model processes input through hierarchical stages with progressively increasing channel dimensions and decreasing spatial resolution, producing a feature map $F \in \mathbb{R}^{B \times C \times H' \times W'}$.
+#### Classification Architecture
 
-*   **Mask-Weighted Pooling:** To focus on breast tissue regions:
-    $$ z = \frac{\sum_{i=0}^{H'-1} \sum_{j=0}^{W'-1} F(i,j) \cdot M_{down}(i,j)}{\sum_{i=0}^{H'-1} \sum_{j=0}^{W'-1} M_{down}(i,j) + \epsilon} $$
-    where $M_{down}$ is the breast mask downsampled to match feature dimensions.
+The model processes input through hierarchical stages with progressively increasing channel dimensions and decreasing spatial resolution, producing a feature map:
 
-*   **Contrastive Loss:** We enforce separation between breast tissue and background representations:
-    $$ \mathcal{L}_{contrast} = \frac{1}{B} \sum_{b=1}^{B} \cos(f^b_{breast}, f^b_{bg}) $$
-    minimizing similarity between tissue and background features.
+$$
+F \,\in\, \mathbb{R}^{B \times C \times H' \times W'}.
+$$
 
-*   **Total Fine-Tuning Loss:** The complete objective integrates cross-entropy, spectral regularization, and contrastive terms:
-    $$ \mathcal{L}_{final} = \mathcal{L}_{CE} + \mathcal{L}_{SN,base} + \mathcal{L}_{SN,mask} + \alpha \mathcal{L}_{contrast} $$
+#### Mask-Weighted Pooling
+
+To focus on breast tissue regions:
+
+$$
+z
+= \frac{\displaystyle\sum_{i=0}^{H'-1} \sum_{j=0}^{W'-1}
+       F(i,j)\,\cdot\,M_{\mathrm{down}}(i,j)}
+       {\displaystyle\sum_{i=0}^{H'-1} \sum_{j=0}^{W'-1}
+       M_{\mathrm{down}}(i,j) + \epsilon},
+$$
+
+where \(M_{\mathrm{down}}\) is the breast mask downsampled to match feature dimensions.
+
+#### Contrastive Loss
+
+We enforce separation between breast tissue and background representations:
+
+$$
+\mathcal{L}_{\mathrm{contrast}}
+= \frac{1}{B} \sum_{b=1}^{B}
+  \cos\bigl(f^b_{\mathrm{breast}},\, f^b_{\mathrm{bg}}\bigr),
+$$
+
+minimizing similarity between tissue and background features.
+
+#### Total Fine-Tuning Loss
+
+The complete objective integrates cross-entropy, spectral regularization, and contrastive terms:
+
+$$
+\mathcal{L}_{\mathrm{final}}
+= \mathcal{L}_{\mathrm{CE}}
+  + \mathcal{L}_{\mathrm{SN,base}}
+  + \mathcal{L}_{\mathrm{SN,mask}}
+  + \alpha\,\mathcal{L}_{\mathrm{contrast}}.
+$$
+
+---
 
 ### Phase 3: Attention-Based Explainability
 
-The framework provides visual explanations of the model's decisions:
+The framework provides visual explanations of the model’s decisions.
 
-*   **Attention Maps:** We extract and visualize attention weights from the final self-attention layer:
-    $$ \bar{A} = \frac{1}{h} \sum_{i=1}^{h} A_i $$
-    where $h$ is the number of attention heads.
+#### Attention Maps
 
-*   **Gradient-weighted Class Activation Mapping (Grad-CAM):** We implement Grad-CAM for our transformer architecture, computing class-specific gradient weights:
-    $$ \alpha_k^c = \frac{1}{H'W'} \sum_{i=0}^{H'-1} \sum_{j=0}^{W'-1} \frac{\partial y^c}{\partial F_k(i,j)} $$
-    where $y^c$ represents the score for class $c$.
+We extract and visualize attention weights from the final self-attention layer:
 
-The spectral-regularized attention maps demonstrate concentrated activation on anatomically plausible malignant findings, while maintaining minimal attention in background areas, confirming the model's focus on diagnostically relevant tissue regions.
+$$
+\overline{A}
+= \frac{1}{h} \sum_{i=1}^{h} A_i,
+$$
+
+where \(h\) is the number of attention heads.
+
+#### Gradient-weighted Class Activation Mapping (Grad-CAM)
+
+We implement Grad-CAM for our transformer architecture, computing class-specific gradient weights:
+
+$$
+\alpha_k^c
+= \frac{1}{H'W'}
+  \sum_{i=0}^{H'-1} \sum_{j=0}^{W'-1}
+  \frac{\partial y^c}{\partial F_k(i,j)},
+$$
+
+where \(y^c\) represents the score for class \(c\).
+
+---
+The spectral-regularized attention maps demonstrate concentrated activation on anatomically plausible malignant findings, while maintaining minimal attention in background areas, confirming the model’s focus on diagnostically relevant tissue regions.
+
 
 ## Command Line Arguments
 
