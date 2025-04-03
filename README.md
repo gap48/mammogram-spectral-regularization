@@ -1,8 +1,6 @@
 # Mitigating Hallucinations in Mammography: A Spectral-Regularized Attention Framework with Breast-Aware Masked Pretraining
 
-## Technical Architecture
-
-This framework addresses challenges in mammography classification through a three-phase approach.
+The paper addresses challenges in mammography classification through a three-phase approach.
 
 ### Phase 1: Breast-Aware Masked Image Modeling (MIM) Pretraining
 
