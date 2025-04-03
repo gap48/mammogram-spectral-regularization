@@ -16,7 +16,7 @@ This framework enhances mammography classification by mitigating model "hallucin
 ### Phase 1: Breast-Aware MIM Pretraining
 
 - **Mask Generation**: A binary mask $M(x) \in \{0,1\}^{H \times W}$ where $M(x)_{u,v} = 1$ for breast tissue pixels, else 0.
-- **Masking Strategy**: Masks blocks where the average mask value $\text{avg_pool2d}(M(x), b, b)(r, c) > \tau$.
+- **Masking Strategy**: Masks blocks where the average mask value $\text{avg_pool2d}(M(x), b, b)(r, c) > \tau$
 - **Reconstruction Loss**: 
   $
   \mathcal{L}_{\text{MIM}} = \frac{1}{B} \sum_{b=1}^{B} \frac{\left\| f_\theta(\tilde{x}_b) - x_b \right\|_1 \cdot M(x_b)}{\sum M(x_b) + \epsilon}
