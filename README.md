@@ -14,10 +14,10 @@ We define a binary mask $M(x) \in \{0,1\}^{H \times W}$ for each mammogram $x$ u
 
 #### Breast-Aware Masking Strategy
 
-We partition the image into non-overlapping blocks of size \(k\times k\). Then, we identify which blocks overlap with the breast region and randomly mask a subset. Mathematically, if we apply a 2D average pooling with kernel size \(k \times k\) on \(M(x)\), the set of **eligible** breast blocks is:
+We partition the image into non-overlapping blocks of size $k\times k$. Then, we identify which blocks overlap with the breast region and randomly mask a subset. Mathematically, if we apply a 2D average pooling with kernel size $k \times k$ on $M(x)$, the set of **eligible** breast blocks is:
 
 $$
-B \;=\; \Bigl\{\, p_i \;\Bigm|\; \text{avg\_pool2d}\bigl(M(x),\,k,\,k\bigr)\bigl(r_i,\,c_i\bigr) > \tau \Bigr\},
+B \;=\; \Bigl\{\, p_i \;\Bigm|\; \text{avg\_pool2d}\bigl(M(x),\,k,\,k\bigr)\bigl(r_i,\,c_i\bigr) \geq \tau \Bigr\},
 $$
 
 where \(\tau\) is a threshold parameter (default \(\tau = 0.5\)). Here, \(B\) is the **set** of block indices corresponding to the breast region.
