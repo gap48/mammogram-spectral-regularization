@@ -86,9 +86,11 @@ The complete objective integrates cross-entropy, spectral regularization, and co
 
 We also apply spectral regularization to the mask attention matrices:
 
-$$\mathcal{L}_{\mathrm{SN,mask}}
+$$
+\mathcal{L}_{\mathrm{SN,mask}}
 = \gamma \sum_{l=1}^{L}
-  \sigma_{\max}\bigl(A_{(l)}\bigr)^2,$$
+  \sigma_{\max}\bigl(A_{(l)}\bigr)^2,
+$$
 
 where $A_{(l)}$ is the attention map at layer $l$.
 
