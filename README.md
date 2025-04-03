@@ -10,7 +10,7 @@ The framework performs self-supervised pretraining using a breast-aware Masked I
 
 #### Breast Segmentation and Mask Generation
 
-We define a binary mask $$ (M(x) \in \{0,1\}^{H \times W} ) $$ for each mammogram $$(x) $$ using a sequence of image processing operations (CLAHE, Otsu’s thresholding, and morphological operations).
+We define a binary mask $(M(x) \in \{0,1\}^{H \times W} )$ for each mammogram $(x)$ using a sequence of image processing operations (CLAHE, Otsu’s thresholding, and morphological operations).
 
 #### Breast-Aware Masking Strategy
 
