@@ -8,7 +8,7 @@ This framework enhances mammography classification by mitigating model "hallucin
 
 ## Technical Architecture
 
-- **Backbone**: Swin Transformer adapted for single-channel mammograms.
+- **Backbone**: Swin Transformer adapted for single-channel mammograms
 - **Pretraining**: Breast-aware masked image modeling with spectral norm regularization.
 - **Fine-Tuning**: Combines cross-entropy, spectral regularization, and contrastive loss.
 - **Interpretability**: Visualizes clinically relevant features.
