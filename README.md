@@ -10,15 +10,13 @@ The framework performs self-supervised pretraining using a breast-aware Masked I
 
 #### Breast Segmentation and Mask Generation
 
-We define a binary mask $(M(x) \in \{0,1\}^{H \times W} )$ for each mammogram $(x)$ using a sequence of image processing operations (CLAHE, Otsu’s thresholding, and morphological operations).
+We define a binary mask $M(x) \in \{0,1\}^{H \times W}$ for each mammogram $x$ using a sequence of image processing operations (CLAHE, Otsu’s thresholding, and morphological operations).
 
 #### Breast-Aware Masking Strategy
 
 We partition the image into non-overlapping blocks, identify blocks overlapping the breast region, and randomly mask a subset. Mathematically, eligible breast blocks are defined as:
 
-$$
-B = \bigl\{ p_i \mid \text{avg\_pool2d}(M(x), b, b)(r_i, c_i) > \tau \bigr\},
-$$
+$$B = \bigl\{ p_i \mid \text{avg\_pool2d}(M(x), b, b)(r_i, c_i) > \tau \bigr\},$$
 
 where \(\tau\) is a threshold parameter (default \(\tau = 0.5\)).
 
@@ -26,12 +24,10 @@ where \(\tau\) is a threshold parameter (default \(\tau = 0.5\)).
 
 The loss function is:
 
-$$
-\mathcal{L}_{\mathrm{MIM}}
+$$\mathcal{L}_{\mathrm{MIM}}
 = \frac{1}{B} \sum_{b=1}^{B}
   \frac{\bigl\| f_{\theta}\bigl(\tilde{x}_b\bigr) - x_b \bigr\|_{1} \,\cdot\, M(x_b)}
-       {\sum M(x_b) + \epsilon},
-$$
+       {\sum_{i,j} M(x_b)_{i,j} + \epsilon},$$
 
 where \(\tilde{x}\) is the masked image, and \(\epsilon = 10^{-8}\) prevents division by zero.
 
@@ -39,18 +35,14 @@ where \(\tilde{x}\) is the masked image, and \(\epsilon = 10^{-8}\) prevents div
 
 We apply spectral regularization to the query and key projection matrices in self-attention layers:
 
-$$
-\mathcal{L}_{\mathrm{SN,base}}
+$$\mathcal{L}_{\mathrm{SN,base}}
 = \beta \sum_{l=1}^{L}
   \Bigl[
     \sigma_{\max}\bigl(W^{Q}_{(l)}\bigr)^2
     + \sigma_{\max}\bigl(W^{K}_{(l)}\bigr)^2
-  \Bigr],
-$$
+  \Bigr],$$
 
 where \(\sigma_{\max}(W)\) denotes the largest singular value of matrix \(W\).
-
----
 
 ### Phase 2: Spectral-Regularized Fine-Tuning for Classification
 
@@ -60,21 +52,17 @@ We fine-tune the pretrained Swin Transformer encoder for binary classification (
 
 The model processes input through hierarchical stages with progressively increasing channel dimensions and decreasing spatial resolution, producing a feature map:
 
-$$
-F \,\in\, \mathbb{R}^{B \times C \times H' \times W'}.
-$$
+$$F \,\in\, \mathbb{R}^{B \times C \times H' \times W'}.$$
 
 #### Mask-Weighted Pooling
 
 To focus on breast tissue regions:
 
-$$
-z
+$$z
 = \frac{\displaystyle\sum_{i=0}^{H'-1} \sum_{j=0}^{W'-1}
-       F(i,j)\,\cdot\,M_{\mathrm{down}}(i,j)}
+       F(:,:,i,j)\,\cdot\,M_{\mathrm{down}}(i,j)}
        {\displaystyle\sum_{i=0}^{H'-1} \sum_{j=0}^{W'-1}
-       M_{\mathrm{down}}(i,j) + \epsilon},
-$$
+       M_{\mathrm{down}}(i,j) + \epsilon},$$
 
 where \(M_{\mathrm{down}}\) is the breast mask downsampled to match feature dimensions.
 
@@ -88,21 +76,23 @@ $$
   \cos\bigl(f^b_{\mathrm{breast}},\, f^b_{\mathrm{bg}}\bigr),
 $$
 
+where $\cos(a,b) = \frac{a \cdot b}{||a|| \cdot ||b||}$ is the cosine similarity between vectors.
+
 minimizing similarity between tissue and background features.
 
 #### Total Fine-Tuning Loss
 
 The complete objective integrates cross-entropy, spectral regularization, and contrastive terms:
 
-$$
-\mathcal{L}_{\mathrm{final}}
-= \mathcal{L}_{\mathrm{CE}}
-  + \mathcal{L}_{\mathrm{SN,base}}
-  + \mathcal{L}_{\mathrm{SN,mask}}
-  + \alpha\,\mathcal{L}_{\mathrm{contrast}}.
-$$
+#### Spectral Norm for Attention Masks
 
----
+We also apply spectral regularization to the mask attention matrices:
+
+$$\mathcal{L}_{\mathrm{SN,mask}}
+= \gamma \sum_{l=1}^{L}
+  \sigma_{\max}\bigl(A_{(l)}\bigr)^2,$$
+
+where $A_{(l)}$ is the attention map at layer $l$.
 
 ### Phase 3: Attention-Based Explainability
 
@@ -127,12 +117,11 @@ $$
 \alpha_k^c
 = \frac{1}{H'W'}
   \sum_{i=0}^{H'-1} \sum_{j=0}^{W'-1}
-  \frac{\partial y^c}{\partial F_k(i,j)},
+  \frac{\partial y^c}{\partial F_{k}(:,:,i,j)},
 $$
 
 where \(y^c\) represents the score for class \(c\).
 
----
 The spectral-regularized attention maps demonstrate concentrated activation on anatomically plausible malignant findings, while maintaining minimal attention in background areas, confirming the model’s focus on diagnostically relevant tissue regions.
 
 
