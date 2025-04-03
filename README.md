@@ -15,62 +15,62 @@ This framework enhances mammography classification by mitigating model "hallucin
 
 ### Phase 1: Breast-Aware MIM Pretraining
 
-- **Mask Generation**: A binary mask \( M(x) \in \{0,1\}^{H \times W} \) where \( M(x)_{u,v} = 1 \) for breast tissue pixels, else 0.
-- **Masking Strategy**: Masks blocks where the average mask value \(\text{avg_pool2d}(M(x), b, b)(r, c) > \tau\).
+- **Mask Generation**: A binary mask $ M(x) \in \{0,1\}^{H \times W} $ where $ M(x)_{u,v} = 1 $ for breast tissue pixels, else 0.
+- **Masking Strategy**: Masks blocks where the average mask value $\text{avg_pool2d}(M(x), b, b)(r, c) > \tau$.
 - **Reconstruction Loss**: 
-  \[
+  $
   \mathcal{L}_{\text{MIM}} = \frac{1}{B} \sum_{b=1}^{B} \frac{\left\| f_\theta(\tilde{x}_b) - x_b \right\|_1 \cdot M(x_b)}{\sum M(x_b) + \epsilon}
-  \]
-  where \( \tilde{x}_b \) is the masked input, \( f_\theta \) is the reconstruction function, and \( \epsilon \) prevents division by zero.
+  $
+  where $ \tilde{x}_b $ is the masked input, $ f_\theta $ is the reconstruction function, and $ \epsilon $ prevents division by zero.
 - **Spectral Regularization**: 
-  \[
+  $
   \mathcal{L}_{\text{SN,base}} = \beta \sum_{l=1}^{L} \left[ \sigma_{\max}(W_{(l)}^Q)^2 + \sigma_{\max}(W_{(l)}^K)^2 \right]
-  \]
-  applied to query (\( W^Q \)) and key (\( W^K \)) matrices in self-attention layers.
+  $
+  applied to query ($ W^Q $) and key ($ W^K $) matrices in self-attention layers.
 - **Mask-Guided Regularization**: 
-  \[
+  $
   \mathcal{L}_{\text{SN,mask}} = \lambda_{\text{reg}} \cdot (1 - \text{breast_ratio}) \cdot \text{attn_avg}
-  \]
-  where \(\text{breast_ratio}\) is the proportion of breast tissue, and \(\text{attn_avg}\) is the average attention score.
+  $
+  where $\text{breast_ratio}$ is the proportion of breast tissue, and $\text{attn_avg}$ is the average attention score.
 - **Total Pretraining Loss**: 
-  \[
+  $
   \mathcal{L}_{\text{pretrain}} = \mathcal{L}_{\text{MIM}} + \mathcal{L}_{\text{SN,base}} + \mathcal{L}_{\text{SN,mask}}
-  \]
+  $
 
 ### Phase 2: Spectral-Regularized Fine-Tuning
 
 - **Mask-Weighted Pooling**: 
-  \[
+  $
   \mathbf{z} = \frac{\sum_{i,j} F(i,j) \cdot M_{\text{down}}(i,j)}{\sum_{i,j} M_{\text{down}}(i,j) + \epsilon}
-  \]
-  where \( F \) is the feature map, and \( M_{\text{down}} \) is the downsampled mask.
+  $
+  where $ F $ is the feature map, and $ M_{\text{down}} $ is the downsampled mask.
 - **Classification Logits**: 
-  \[
+  $
   \text{logits} = W_{\text{cls}} \mathbf{z} + \mathbf{b}_{\text{cls}}
-  \]
+  $
 - **Contrastive Loss**: 
-  \[
+  $
   \mathcal{L}_{\text{contrast}} = \frac{1}{B} \sum_{b=1}^{B} \cos(\mathbf{f}_{\text{breast}}^b, \mathbf{f}_{\text{bg}}^b)
-  \]
-  where \( \mathbf{f}_{\text{breast}} \) and \( \mathbf{f}_{\text{bg}} \) are embeddings from breast and background regions.
+  $
+  where $ \mathbf{f}_{\text{breast}} $ and $ \mathbf{f}_{\text{bg}} $ are embeddings from breast and background regions.
 - **Total Fine-Tuning Loss**: 
-  \[
+  $
   \mathcal{L}_{\text{final}} = \mathcal{L}_{\text{CE}} + \mathcal{L}_{\text{SN,base}} + \mathcal{L}_{\text{SN,mask}} + \alpha \mathcal{L}_{\text{contrast}}
-  \]
-  where \( \mathcal{L}_{\text{CE}} \) is the cross-entropy loss, and \( \alpha \) balances the contrastive term.
+  $
+  where $ \mathcal{L}_{\text{CE}} $ is the cross-entropy loss, and $ \alpha $ balances the contrastive term.
 
 ### Phase 3: Attention-Based Explainability
 
 - **Attention Maps**: 
-  \[
+  $
   \overline{A} = \frac{1}{h} \sum_{i=1}^{h} A_i
-  \]
-  averaged across \( h \) heads, then upsampled and normalized.
+  $
+  averaged across $ h $ heads, then upsampled and normalized.
 - **Grad-CAM**: 
-  \[
+  $
   \alpha_k^c = \frac{1}{H' W'} \sum_{i,j} \frac{\partial y^c}{\partial F_k(i,j)}, \quad L_{\text{Grad-CAM}}^c(i,j) = \text{ReLU}\left( \sum_{k} \alpha_k^c F_k(i,j) \right)
-  \]
-  computed for class \( c \), then upsampled to the input resolution.
+  $
+  computed for class $ c $, then upsampled to the input resolution.
 
 ## Key Features
 
