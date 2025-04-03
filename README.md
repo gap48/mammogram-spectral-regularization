@@ -14,26 +14,26 @@ We define a binary mask \(M(x) \in \{0,1\}^{H \times W}\) for each mammogram \(x
 
 #### Breast-Aware Masking Strategy
 
-We partition the image into non-overlapping blocks, identify blocks overlapping the breast region, and randomly mask a subset. Mathematically, eligible breast blocks are defined as:
+We partition the image into non-overlapping blocks of size \(k\times k\). Then, we identify which blocks overlap with the breast region and randomly mask a subset. Mathematically, if we apply a 2D average pooling with kernel size \(k \times k\) on \(M(x)\), the set of **eligible** breast blocks is:
 
 $$
-B = \bigl\{ p_i \mid \text{avg\_pool2d}(M(x), b, b)(r_i, c_i) > \tau \bigr\},
+B \;=\; \Bigl\{\, p_i \;\Bigm|\; \text{avg\_pool2d}\bigl(M(x),\,k,\,k\bigr)\bigl(r_i,\,c_i\bigr) > \tau \Bigr\},
 $$
 
-where \(\tau\) is a threshold parameter (default \(\tau = 0.5\)).
+where \(\tau\) is a threshold parameter (default \(\tau = 0.5\)). Here, \(B\) is the **set** of block indices corresponding to the breast region.
 
 #### Reconstruction Objective
 
-The loss function is:
+Let \(\lvert B \rvert\) be the **number** of blocks in \(B\). The MIM loss function is:
 
 $$
 \mathcal{L}_{\mathrm{MIM}}
-= \frac{1}{B} \sum_{b=1}^{B}
+= \frac{1}{\lvert B \rvert} \sum_{b=1}^{\lvert B \rvert}
  \frac{\bigl\| f_{\theta}\bigl(\tilde{x}_b\bigr) - x_b \bigr\|_{1} \,\cdot\, M(x_b)}
       {\sum_{i,j} M(x_b)_{i,j} + \epsilon},
 $$
 
-where \(\tilde{x}\) is the masked image, and \(\epsilon = 10^{-8}\) prevents division by zero.
+where \(\tilde{x}\) is the masked image, \(x_b\) is the (unmasked) target patch for block \(b\), \(M(x_b)\) is the corresponding patch of the breast mask, and \(\epsilon=10^{-8}\) prevents division by zero.
 
 #### Spectral Norm Regularization
 
@@ -61,8 +61,10 @@ We fine-tune the pretrained Swin Transformer encoder for **binary classification
 The model processes input through hierarchical stages with progressively increasing channel dimensions and decreasing spatial resolution, producing a feature map:
 
 $$
-F \,\in\, \mathbb{R}^{B \times C \times H' \times W'}.
+F \;\in\; \mathbb{R}^{B \times C \times H' \times W'}.
 $$
+
+*(Here \(B\) is the **batch size** — not the block set from the earlier section.)*
 
 #### Mask-Weighted Pooling
 
@@ -70,26 +72,25 @@ To focus on breast tissue regions:
 
 $$
 z
-= \frac{\sum_{i=0}^{H'-1} \sum_{j=0}^{W'-1}
+= \frac{\displaystyle \sum_{i=0}^{H'-1} \sum_{j=0}^{W'-1}
     F(:,:,i,j)\,\cdot\,M_{\mathrm{down}}(i,j)}
-    {\sum_{i=0}^{H'-1} \sum_{j=0}^{W'-1}
-    M_{\mathrm{down}}(i,j) + \epsilon},
+    {\displaystyle \sum_{i=0}^{H'-1} \sum_{j=0}^{W'-1}
+    M_{\mathrm{down}}(i,j) \;+\;\epsilon},
 $$
 
-where \(M_{\mathrm{down}}\) is the breast mask downsampled to match the feature dimensions.
+where \(M_{\mathrm{down}}\) is the breast mask downsampled to match the feature dimensions, and \(\epsilon\) prevents division by zero.
 
 #### Contrastive Loss
 
-We enforce separation between breast tissue and background representations:
+We enforce separation between breast tissue and background representations. Let \(N\) be the size of the current mini-batch. Then:
 
 $$
 \mathcal{L}_{\mathrm{contrast}}
-= \frac{1}{B}
- \sum_{b=1}^{B}
- \cos\bigl(f^b_{\mathrm{breast}},\, f^b_{\mathrm{bg}}\bigr),
+= \frac{1}{N} \sum_{i=1}^{N}
+ \cos\Bigl(f^i_{\mathrm{breast}},\, f^i_{\mathrm{bg}}\Bigr),
 $$
 
-where \(\cos(a,b) = \frac{a \cdot b}{\|a\|\cdot\|b\|}\) is the cosine similarity between vectors. Minimizing this term **reduces similarity** between tissue and background features.
+where \(\cos(a,b) = \dfrac{a \cdot b}{\|a\|\cdot\|b\|}\) is the cosine similarity between vectors. Minimizing this term **reduces similarity** between tissue and background features.
 
 #### Total Fine-Tuning Loss
 
@@ -139,9 +140,7 @@ $$
 
 where \(y^c\) represents the score for class \(c\).
 
-**Result:** The **spectral-regularized attention maps** demonstrate concentrated activation on anatomically plausible malignant findings, while maintaining minimal attention in background areas, confirming the model’s focus on diagnostically relevant tissue regions.
-
-
+**Result**: The **spectral-regularized attention maps** demonstrate concentrated activation on anatomically plausible malignant findings, while maintaining minimal attention in background areas—confirming the model’s focus on diagnostically relevant tissue regions.
 
 
 ## Command Line Arguments
