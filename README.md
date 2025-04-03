@@ -2,8 +2,8 @@
 
 This framework enhances mammography classification by mitigating model "hallucinations" through a three-phase process:
 
-1. **Breast-Aware MIM Pretraining**: Uses a Swin Transformer and convolutional decoder for self-supervised learning, emphasizing breast tissue over background features.
-2. **Spectral-Regularized Fine-Tuning**: Fine-tunes for benign vs. malignant classification with mask-weighted pooling and contrastive loss.
+1. **Breast-Aware MIM Pretraining**: Uses a Swin Transformer and convolutional decoder for self-supervised learning, emphasizing breast tissue over background features and contrastive loss to capture subtle anatomical cues
+2. **Spectral-Regularized Fine-Tuning**: Fine-tunes for benign vs. malignant classification with mask-weighted pooling and attention modulation between breast tissue area and background region
 3. **Attention-Based Explainability**: Provides interpretable predictions using attention maps and Grad-CAM.
 
 ## Technical Architecture
@@ -16,6 +16,13 @@ This framework enhances mammography classification by mitigating model "hallucin
 ### Phase 1: Breast-Aware MIM Pretraining
 
 - **Mask Generation**: A binary mask $M(x) \in \{0,1\}^{H \times W}$ where $M(x)_{u,v} = 1$ for breast tissue pixels, else 0.
+- \[
+M(x) \in \{0,1\}^{H \times W} \quad \text{where} \quad M(x)_{u,v} =
+\begin{cases}
+1 & \text{if pixel } (u,v) \text{ is breast tissue} \\
+0 & \text{otherwise}
+\end{cases}
+\]
 - **Masking Strategy**: Masks blocks where the average mask value $\text{avg_pool2d}(M(x), b, b)(r, c)  \tau$
 - **Reconstruction Loss**: 
   $
