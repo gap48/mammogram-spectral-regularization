@@ -8,14 +8,14 @@ This framework enhances mammography classification by mitigating model "hallucin
 
 ## Technical Architecture
 
-- **Backbone**: Swin Transformer adapted for single-channel mammograms
+- **Backbone**: Swin Transformer adapted for single-channel mammograms.
 - **Pretraining**: Breast-aware masked image modeling with spectral norm regularization.
 - **Fine-Tuning**: Combines cross-entropy, spectral regularization, and contrastive loss.
 - **Interpretability**: Visualizes clinically relevant features.
 
 ### Phase 1: Breast-Aware MIM Pretraining
 
-- **Mask Generation**: A binary mask $ M(x) \in \{0,1\}^{H \times W} $ where $ M(x)_{u,v} = 1 $ for breast tissue pixels, else 0.
+- **Mask Generation**: A binary mask $M(x) \in \{0,1\}^{H \times W} $ where $ M(x)_{u,v} = 1$ for breast tissue pixels, else 0.
 - **Masking Strategy**: Masks blocks where the average mask value $\text{avg_pool2d}(M(x), b, b)(r, c) > \tau$.
 - **Reconstruction Loss**: 
   $
