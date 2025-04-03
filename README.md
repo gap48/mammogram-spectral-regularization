@@ -16,7 +16,7 @@ This framework enhances mammography classification by mitigating model "hallucin
 ### Phase 1: Breast-Aware MIM Pretraining
 
 - **Mask Generation**: A binary mask $M(x) \in \{0,1\}^{H \times W}$ where $M(x)_{u,v} = 1$ for breast tissue pixels, else 0.
-- **Masking Strategy**: Masks blocks where the average mask value $\text{avgpool2d}(M(x), b, b)(r, c) > \tau$
+- **Masking Strategy**: Masks blocks where the average mask value $\text{avg-pool2d}(M(x), b, b)(r, c) > \tau$
 - **Reconstruction Loss**: 
   $
   \mathcal{L}_{\text{MIM}} = \frac{1}{B} \sum_{b=1}^{B} \frac{\left\| f_\theta(\tilde{x}_b) - x_b \right\|_1 \cdot M(x_b)}{\sum M(x_b) + \epsilon}
@@ -29,9 +29,9 @@ This framework enhances mammography classification by mitigating model "hallucin
   applied to query ($ W^Q $) and key ($ W^K $) matrices in self-attention layers.
 - **Mask-Guided Regularization**: 
   $
-  \mathcal{L}_{\text{SN,mask}} = \lambda_{\text{reg}} \cdot (1 - \text{breast_ratio}) \cdot \text{attn_avg}
+  \mathcal{L}_{\text{SN,mask}} = \lambda_{\text{reg}} \cdot (1 - \text{breast-ratio}) \cdot \text{attn-avg}
   $
-  where $\text{breast_ratio}$ is the proportion of breast tissue, and $\text{attn_avg}$ is the average attention score.
+  where $\text{breast-ratio}$ is the proportion of breast tissue, and $\text{attn-avg}$ is the average attention score.
 - **Total Pretraining Loss**: 
   $
   \mathcal{L}_{\text{pretrain}} = \mathcal{L}_{\text{MIM}} + \mathcal{L}_{\text{SN,base}} + \mathcal{L}_{\text{SN,mask}}
