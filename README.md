@@ -20,7 +20,7 @@ This framework enhances mammography classification by mitigating model "hallucin
 - **Reconstruction Loss**: 
   ```math
   \mathcal{L}_{\text{MIM}} = \frac{1}{B} \sum_{b=1}^{B} \frac{\left\| f_\theta(\tilde{x}_b) - x_b \right\|_1 \cdot M(x_b)}{\sum M(x_b) + \epsilon}
-  
+  ```
   where $`\tilde{x}_b`$ is the masked input, $`f_\theta`$ is the reconstruction function, and $`\epsilon`$ prevents division by zero.
 - **Spectral Regularization**: 
 ```math
